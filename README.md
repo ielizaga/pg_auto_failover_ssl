@@ -61,13 +61,21 @@
      chmod og-rwx root.key root.crt server.crt server.key autofailover1.crt autofailover1.key autofailover2.crt autofailover2.key postgresql.crt postgresql.key
      ```
 
-  5. Initialize the monitor with pg_autoctl
+  5. Create the .postgres directory where the client certificate will be placed and move a copy of the postgresql files and root certificate to it.
+     Note: If not done, `pg_autoctl show uri`  will later on fail
+
+     ```bash
+     mkdir ~postgres/.postgresql
+     cp postgresql.crt postgresql.key root.crt ~postgres/.postgresql
+     ```
+
+  6. Initialize the monitor with pg_autoctl
 
      ```bash
      pg_autoctl create monitor --ssl-ca-file root.crt --server-cert server.crt --server-key server.key --skip-pg-hba --pgdata ~postgres/monitor --ssl-mode verify-full
      ```
 
-  4. Add the service to systemd and start it
+  7. Add the service to systemd and start it
 
      ```bash
      pg_autoctl -q show systemd --pgdata ~postgres/monitor > pgautofailover.service
@@ -77,19 +85,19 @@
      sudo systemctl start pgautofailover
      ```
 
-  5. Edit the `pg_ident.conf` file and add a user name map for pgautofailover
+  8. Edit the `pg_ident.conf` file and add a user name map for pgautofailover
 
      ```bash
      echo "pgautofailover   postgres               autoctl_node" >> ~postgres/monitor/pg_ident.conf
      ```
 
-  6. Edit the `pg_hba.conf` file and add a rule for the pgautofailover map
+  9. Edit the `pg_hba.conf` file and add a rule for the pgautofailover map
 
      ```bash
      echo "hostssl pg_auto_failover autoctl_node 0.0.0.0/0 cert map=pgautofailover" >> ~postgres/monitor/pg_hba.conf
      ```
 
-  7. Restart service
+  10. Restart service
 
      ```bash
      sudo systemctl restart pgautofailover
